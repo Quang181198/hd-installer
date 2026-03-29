@@ -1,7 +1,9 @@
 #!/bin/bash
 set -e
 
-# Tiền tố đồng bộ: Đưa người dùng vào thư mục làm việc chuẩn
+# CLEAR MÀN HÌNH THEO Ý CỦA BẠN (Dành cho bản đồ xịn)
+clear
+
 echo "========================================================"
 echo "🚀 HD TRANSPORT - TRÌNH KHỞI TẠO HỆ THỐNG (SAAS PRO)"
 echo "========================================================"
@@ -58,15 +60,14 @@ cat <<INNER_EOF > scripts/install-vps.sh
 set -e
 echo "🟢 Đang cài đặt HD Transport..."
 
-# BUỘC PHẢI TẢI BẢN MỚI NHẤT TRƯỚC KHI CHẠY SETUP
-echo "📥 Đang kiểm tra và tải Hộp Đen mới nhất từ GitHub..."
+# PHẢI PULL TRƯỚC ĐỂ LẤY BẢN ĐÚC JS MỚI NHẤT
+echo "📥 Đang kiểm tra và tải Hộp Đen mới nhất (Bản Pro JS)..."
 sudo docker pull ghcr.io/quang181198/transport-web:latest
 
 read -p "❓ Nhập Tên miền (VD: dieuhanh.abc.com): " VPS_DOMAIN
 echo "VPS_DOMAIN=\$VPS_DOMAIN" > .env
 
-# CHẠY SETUP TRONG CONTAINER: 
-# Chúng ta dùng "node scripts/setup.js" (Bản JavaScript đã đúc) để đảm bảo không bao giờ lỗi module.
+# CHẠY SETUP TRONG CONTAINER: Dùng node chạy setup.js
 sudo docker run --rm -it \\
     -u root \\
     -v \$(pwd):/host \\
@@ -76,14 +77,6 @@ sudo docker run --rm -it \\
 
 sudo docker compose up -d
 echo "🎉 XONG! Truy cập: https://\$VPS_DOMAIN"
-INNER_EOF
-
-cat <<INNER_EOF > scripts/update-vps.sh
-#!/bin/bash
-echo "📥 Đang kéo bản cập nhật Hộp Đen mới nhất..."
-sudo docker pull ghcr.io/quang181198/transport-web:latest
-sudo docker compose up -d
-echo "✅ Đã cập nhật xong!"
 INNER_EOF
 
 chmod +x scripts/*.sh
