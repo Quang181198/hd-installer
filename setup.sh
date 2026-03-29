@@ -27,32 +27,47 @@ fi
 # 2. Tạo thư mục làm việc sạch sẽ
 mkdir -p transport-app/scripts && cd transport-app
 
-# 3. Tự động sinh file docker-compose.yml 
+# 3. Tự động sinh file docker-compose.yml (DÙNG BLOCK STYLE - KHÔNG DÙNG DẤU NGOẶC NHỌN)
 cat <<INNER_EOF > docker-compose.yml
 version: '3.8'
 services:
   app:
     image: ghcr.io/quang181198/transport-web:latest
     restart: unless-stopped
-    env_file: [.env.local]
-    expose: ["3000"]
+    env_file:
+      - .env.local
+    expose:
+      - "3000"
+
   caddy:
     image: caddy:alpine
     restart: unless-stopped
-    ports: ["80:80", "443:443"]
-    environment: { VPS_DOMAIN: \${VPS_DOMAIN} }
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - VPS_DOMAIN=\${VPS_DOMAIN}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
-    depends_on: [app]
-volumes: { caddy_data: {}, caddy_config: {} }
+    depends_on:
+      - app
+
+volumes:
+  caddy_data:
+  caddy_config:
 INNER_EOF
 
 # 4. Tự động sinh file Caddyfile
 cat <<INNER_EOF > Caddyfile
-{ email admin@{\$VPS_DOMAIN} }
-{\$VPS_DOMAIN} { reverse_proxy app:3000 }
+{
+  email admin@{\$VPS_DOMAIN}
+}
+
+{\$VPS_DOMAIN} {
+  reverse_proxy app:3000
+}
 INNER_EOF
 
 # 5. Tự động sinh file Install & Update con
