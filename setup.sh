@@ -1,4 +1,3 @@
-cat <<EOF > setup.sh
 #!/bin/bash
 set -e
 
@@ -9,7 +8,7 @@ echo "========================================================"
 # 1. Tạo thư mục làm việc sạch sẽ
 mkdir -p transport-app/scripts && cd transport-app
 
-# 2. Tự động sinh file docker-compose.yml 
+# 2. Tự động sinh file docker-compose.yml (Hộp Đen)
 cat <<INNER_EOF > docker-compose.yml
 version: '3.8'
 services:
@@ -22,7 +21,7 @@ services:
     image: caddy:alpine
     restart: unless-stopped
     ports: ["80:80", "443:443"]
-    environment: { VPS_DOMAIN: \\\${VPS_DOMAIN} }
+    environment: { VPS_DOMAIN: \${VPS_DOMAIN} }
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
@@ -33,8 +32,8 @@ INNER_EOF
 
 # 3. Tự động sinh file Caddyfile
 cat <<INNER_EOF > Caddyfile
-{ email admin@{\\\$VPS_DOMAIN} }
-{\\\$VPS_DOMAIN} { reverse_proxy app:3000 }
+{ email admin@{\$VPS_DOMAIN} }
+{\$VPS_DOMAIN} { reverse_proxy app:3000 }
 INNER_EOF
 
 # 4. Tự động sinh file Install & Update con
@@ -43,18 +42,18 @@ cat <<INNER_EOF > scripts/install-vps.sh
 set -e
 echo "🟢 Đang cài đặt HD Transport..."
 read -p "❓ Nhập Tên miền (VD: dieuhanh.abc.com): " VPS_DOMAIN
-echo "VPS_DOMAIN=\\\$VPS_DOMAIN" > .env
+echo "VPS_DOMAIN=\$VPS_DOMAIN" > .env
 
-# SỬA LỖI TẠI ĐÂY: Chạy setup trong ruột Container rồi copy file cấu hình ra ngoài host
+# CHẠY SETUP TRONG CONTAINER: Lấy file cấu hình từ image ra ngoài host
 sudo docker run --rm -it \\
-    -v \\\$(pwd):/host \\
+    -v \$(pwd):/host \\
     -w /app \\
     ghcr.io/quang181198/transport-web:latest \\
     bash -c "npx tsx scripts/setup.ts && cp .env.local /host/"
 
 sudo docker compose pull
 sudo docker compose up -d
-echo "🎉 XONG! Truy cập: https://\\\$VPS_DOMAIN"
+echo "🎉 XONG! Truy cập: https://\$VPS_DOMAIN"
 INNER_EOF
 
 cat <<INNER_EOF > scripts/update-vps.sh
@@ -67,9 +66,3 @@ chmod +x scripts/*.sh
 
 # 5. Kích hoạt trình cài đặt
 sudo ./scripts/install-vps.sh
-INNER_EOF
-
-# Commit và Push bản sửa lỗi lên GitHub
-git add setup.sh
-git commit -m "fix: sửa lỗi mount volume làm mất script setup"
-git push origin main
