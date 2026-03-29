@@ -111,5 +111,13 @@ INNER_EOF
 
 chmod +x scripts/*.sh
 
-# 6. Kích hoạt trình cài đặt ngay lập tức
+# 6. Copy script update ra thư mục gốc để dễ dùng sau này
+cd ..
+if [ -f "update.sh" ]; then
+    chmod +x update.sh
+    echo "✅ Script cập nhật đã sẵn sàng tại: /var/www/hd-installer/update.sh"
+fi
+cd transport-app
+
+# 7. Kích hoạt trình cài đặt ngay lập tức
 sudo ./scripts/install-vps.sh
