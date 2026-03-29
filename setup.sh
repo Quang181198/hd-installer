@@ -27,7 +27,7 @@ fi
 # 2. Tạo thư mục làm việc sạch sẽ
 mkdir -p transport-app/scripts && cd transport-app
 
-# 3. Tự động sinh file docker-compose.yml (DÙNG BLOCK STYLE - KHÔNG DÙNG DẤU NGOẶC NHỌN)
+# 3. Tự động sinh file docker-compose.yml (THÊM DNS ĐỂ GIẢI QUYẾT LỖI SSL)
 cat <<INNER_EOF > docker-compose.yml
 version: '3.8'
 services:
@@ -38,6 +38,9 @@ services:
       - .env.local
     expose:
       - "3000"
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
 
   caddy:
     image: caddy:alpine
@@ -53,6 +56,9 @@ services:
       - caddy_config:/config
     depends_on:
       - app
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
 
 volumes:
   caddy_data:
