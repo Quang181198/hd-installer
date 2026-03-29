@@ -1,3 +1,4 @@
+cat <<EOF > setup.sh
 #!/bin/bash
 set -e
 
@@ -8,8 +9,8 @@ echo "========================================================"
 # 1. Tạo thư mục làm việc sạch sẽ
 mkdir -p transport-app/scripts && cd transport-app
 
-# 2. Tự động sinh file docker-compose.yml (Hộp Đen)
-cat <<EOF > docker-compose.yml
+# 2. Tự động sinh file docker-compose.yml 
+cat <<INNER_EOF > docker-compose.yml
 version: '3.8'
 services:
   app:
@@ -21,40 +22,54 @@ services:
     image: caddy:alpine
     restart: unless-stopped
     ports: ["80:80", "443:443"]
-    environment: { VPS_DOMAIN: \${VPS_DOMAIN} }
+    environment: { VPS_DOMAIN: \\\${VPS_DOMAIN} }
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
     depends_on: [app]
 volumes: { caddy_data: {}, caddy_config: {} }
-EOF
+INNER_EOF
 
 # 3. Tự động sinh file Caddyfile
-cat <<EOF > Caddyfile
-{ email admin@{\$VPS_DOMAIN} }
-{\$VPS_DOMAIN} { reverse_proxy app:3000 }
-EOF
+cat <<INNER_EOF > Caddyfile
+{ email admin@{\\\$VPS_DOMAIN} }
+{\\\$VPS_DOMAIN} { reverse_proxy app:3000 }
+INNER_EOF
 
 # 4. Tự động sinh file Install & Update con
-cat <<EOF > scripts/install-vps.sh
+cat <<INNER_EOF > scripts/install-vps.sh
 #!/bin/bash
 set -e
-read -p "❓ Nhập Tên miền (VD: app.congty.com): " VPS_DOMAIN
-echo "VPS_DOMAIN=\$VPS_DOMAIN" > .env
-sudo docker run --rm -it -v \$(pwd):/app -w /app ghcr.io/quang181198/transport-web:latest npx tsx scripts/setup.ts
+echo "🟢 Đang cài đặt HD Transport..."
+read -p "❓ Nhập Tên miền (VD: dieuhanh.abc.com): " VPS_DOMAIN
+echo "VPS_DOMAIN=\\\$VPS_DOMAIN" > .env
+
+# SỬA LỖI TẠI ĐÂY: Chạy setup trong ruột Container rồi copy file cấu hình ra ngoài host
+sudo docker run --rm -it \\
+    -v \\\$(pwd):/host \\
+    -w /app \\
+    ghcr.io/quang181198/transport-web:latest \\
+    bash -c "npx tsx scripts/setup.ts && cp .env.local /host/"
+
 sudo docker compose pull
 sudo docker compose up -d
-EOF
+echo "🎉 XONG! Truy cập: https://\\\$VPS_DOMAIN"
+INNER_EOF
 
-cat <<EOF > scripts/update-vps.sh
+cat <<INNER_EOF > scripts/update-vps.sh
 #!/bin/bash
 sudo docker compose pull app && sudo docker compose up -d
-EOF
+echo "✅ Đã cập nhật xong!"
+INNER_EOF
 
 chmod +x scripts/*.sh
 
-# 5. Kích hoạt trình cài đặt ngay lập tức
+# 5. Kích hoạt trình cài đặt
 sudo ./scripts/install-vps.sh
+INNER_EOF
 
-echo "🎉 HOÀN TẤT CÀI ĐẶT HỘP ĐEN!"
+# Commit và Push bản sửa lỗi lên GitHub
+git add setup.sh
+git commit -m "fix: sửa lỗi mount volume làm mất script setup"
+git push origin main
