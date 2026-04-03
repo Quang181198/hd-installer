@@ -93,7 +93,7 @@ Chạy lệnh này để bỏ qua và lấy bản mới:
 ```bash
 cd /var/www/hd-installer
 git reset --hard origin/main && git pull
-chmod +x setup.sh update.sh
+chmod +x setup.sh update.sh renew-license.sh
 sudo ./update.sh
 ```
 
@@ -104,6 +104,33 @@ sudo ./update.sh
 1. Mở file `HD_KeyGen_Trum_Cuoi.html` bằng trình duyệt
 2. Nhập tên miền + ngày hết hạn → Copy mã
 3. Khách hàng dán mã vào file `.env.local` tại dòng `HD_LICENSE_KEY=`
+
+---
+
+## 🔄 CẬP NHẬT LICENSE KEY (KHÔNG CẦN CÀI LẠI)
+
+Dùng khi license hết hạn hoặc cần đổi mã mới cho khách hàng.
+
+### Bước 1 — Chạy script gia hạn
+
+```bash
+cd /var/www/hd-installer && sudo ./renew-license.sh
+```
+
+Script sẽ tự động:
+- Hiển thị license hiện tại (đã che bớt)
+- Yêu cầu nhập License Key mới
+- Cập nhật file `.env.local` (chỉ thay dòng `HD_LICENSE_KEY=`, giữ nguyên các biến khác)
+- Khởi động lại container để áp dụng ngay
+
+### Bước 2 — Kiểm tra sau khi gia hạn
+
+```bash
+# Xác nhận license mới đã được áp dụng
+sudo docker exec transport-app-app-1 env | grep HD_LICENSE
+```
+
+> ⚠️ Nếu lệnh trên báo lỗi tên container, kiểm tra tên thực bằng: `sudo docker ps`
 
 ---
 
@@ -133,3 +160,26 @@ cd /var/www/hd-installer/transport-app
 sudo docker compose logs app --tail=50     # Log ứng dụng
 sudo docker compose logs caddy --tail=30  # Log HTTPS
 ```
+Transport-SaaS-Multi-Tenant
+nano
+https://yeduwmuejiwtflnkzkkq.supabase.co
+
+HD_Transporttravel
+nano
+https://spdjyopcjvskkbrlqiud.supabase.co
+
+
+Migrate database
+
+npx supabase db dump --db-url "$OLD_DB_URL" -f schema.sql
+
+export OLD_DB_URL='postgresql://postgres.yeduwmuejiwtflnkzkkq:NMQuang%40181198@aws-1-ap-southeast-1.pooler.supabase.com:5432/postgres'
+export NEW_DB_URL='postgresql://postgres.spdjyopcjvskkbrlqiud:NMQuang%40181198@aws-1-ap-northeast-1.pooler.supabase.com:5432/postgres'       
+
+
+psql "$NEW_DB_URL" -c "select now();"
+npx supabase db dump --db-url "$OLD_DB_URL" -f schema.sql
+psql --single-transaction --variable ON_ERROR_STOP=1 --file schema.sql --dbname "$NEW_DB_URL"
+
+npx supabase db dump --db-url "$OLD_DB_URL" -f data.sql --use-copy --data-only -x "storage.buckets_vectors" -x "storage.vector_indexes"
+psql --single-transaction --variable ON_ERROR_STOP=1 --file data.sql --dbname "$NEW_DB_URL"
