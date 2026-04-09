@@ -90,8 +90,10 @@ read -p "❓ Nhập Tên miền (VD: dieuhanh.abc.com): " VPS_DOMAIN
 echo "VPS_DOMAIN=\$VPS_DOMAIN" > .env
 
 # CHẠY SETUP TRONG CONTAINER: Dùng node chạy setup.js
+# Thông tin Supabase đã được nhúng sẵn trong image → chỉ cần nhập Tenant + Admin + License
 sudo docker run --rm -it \\
     -u root \\
+    -e VPS_DOMAIN=\$VPS_DOMAIN \\
     -v \$(pwd):/host \\
     -w /app \\
     ghcr.io/quang181198/transport-web:latest \\

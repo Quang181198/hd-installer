@@ -27,22 +27,20 @@ chmod +x setup.sh update.sh
 ./setup.sh
 ```
 
-Trong lúc chạy, bạn sẽ được hỏi:
+Trong lúc chạy, bạn sẽ được hỏi **6 câu** (thông tin Supabase đã được nhúng sẵn trong hệ thống):
 
 | # | Thông tin | Ví dụ |
 |---|-----------|-------|
 | 1 | Tên miền | `dieuhanh.congty.com` |
-| 2 | PostgreSQL Connection String | `postgresql://postgres.xxx:pw@...` |
-| 3 | Supabase URL | `https://xxx.supabase.co` |
-| 4 | Supabase Anon Key | `eyJhbGci...` |
-| 5 | Supabase Service Role Key | `eyJhbGci...` |
-| 6 | Tên Công Ty (Tenant) | `Công Ty ABC` |
-| 7 | Slug Tenant | `cong-ty-abc` |
-| 8 | Email Admin | `admin@congty.com` |
-| 9 | Mật khẩu Admin | Tối thiểu 6 ký tự |
-| 10 | Mã License Key | Do HD Transport cấp |
+| 2 | Tên Công Ty (Tenant) | `Công Ty ABC` |
+| 3 | Slug Tenant | `cong-ty-abc` |
+| 4 | Email Admin | `admin@congty.com` |
+| 5 | Mật khẩu Admin | Tối thiểu 6 ký tự |
+| 6 | Mã License Key | Do HD Transport cấp |
 
 > Script tự động cài Docker, chạy schema + tất cả migrations (bao gồm multi-tenant), tạo Tenant + Admin, cấu hình HTTPS và khởi động hệ thống.
+>
+> 💡 **Lưu ý**: Nếu image chưa được nhúng cấu hình Supabase (bản build cũ), script sẽ tự động hỏi thêm 4 thông tin: PostgreSQL Connection String, Supabase URL, Anon Key, và Service Role Key.
 
 ### Bước 3 — Bật Custom Access Token Hook (BẮT BUỘC)
 
@@ -55,7 +53,7 @@ Trong lúc chạy, bạn sẽ được hỏi:
 
 ### Bước 4 — Ghi lại file `.env.local` (nếu cần)
 
-> Thông thường, `setup.sh` đã tự tạo file này. Nếu cần ghi lại thủ công:
+> Thông thường, `setup.sh` đã tự tạo file này. Thông tin Supabase được nhúng sẵn trong Docker image nên bạn **không cần biết** các key này. Nếu cần ghi lại thủ công (VD: đổi License Key):
 
 ```bash
 cat > /var/www/hd-installer/transport-app/.env.local << 'EOF'
@@ -67,6 +65,8 @@ NEXT_PUBLIC_APP_NAME=HD Transport Management
 NEXT_PUBLIC_APP_URL=https://ten-mien-cua-ban.com
 EOF
 ```
+
+> ⚠️ Liên hệ HD Transport để được cung cấp thông tin Supabase nếu cần ghi lại thủ công.
 
 Sau đó khởi động lại:
 
@@ -147,7 +147,7 @@ Tenant Admin đăng nhập app → **Settings** → có 2 tab:
 
 ## 🧹 PHẦN 4: CÀI LẠI TỪ ĐẦU (KHI CẦN)
 
-Dùng khi đổi Supabase, đổi tên miền, hoặc lỗi nặng:
+Dùng khi đổi tên miền, đổi tenant, hoặc lỗi nặng:
 
 ```bash
 # Dọn sạch
