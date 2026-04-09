@@ -5,7 +5,7 @@ set -e
 clear
 
 echo "========================================================"
-echo "🚀 HD TRANSPORT - TRÌNH KHỞI TẠO HỆ THỐNG (SAAS PRO)"
+echo "🚀 HD TRANSPORT - TRÌNH KHỞI TẠO HỆ THỐNG (MULTI-TENANT SAAS)"
 echo "========================================================"
 
 # 1. KIỂM TRA VÀ CÀI ĐẶT DOCKER TỰ ĐỘNG

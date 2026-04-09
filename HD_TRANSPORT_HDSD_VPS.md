@@ -1,4 +1,4 @@
-# 🚛 HD TRANSPORT - HƯỚNG DẪN VẬN HÀNH VPS
+# 🚛 HD TRANSPORT - HƯỚNG DẪN VẬN HÀNH VPS (Multi-Tenant SaaS)
 
 ---
 
@@ -28,17 +28,34 @@ chmod +x setup.sh update.sh
 ```
 
 Trong lúc chạy, bạn sẽ được hỏi:
-- **Tên miền** (VD: `dieuhanh.congty.com`)
-- **4 thông số Supabase** (lấy tại Supabase → Project Settings)
-- **Mã License Key** (do HD Transport cấp)
 
-> Script tự động cài Docker, kéo Image, cấu hình HTTPS và khởi động hệ thống.
+| # | Thông tin | Ví dụ |
+|---|-----------|-------|
+| 1 | Tên miền | `dieuhanh.congty.com` |
+| 2 | PostgreSQL Connection String | `postgresql://postgres.xxx:pw@...` |
+| 3 | Supabase URL | `https://xxx.supabase.co` |
+| 4 | Supabase Anon Key | `eyJhbGci...` |
+| 5 | Supabase Service Role Key | `eyJhbGci...` |
+| 6 | Tên Công Ty (Tenant) | `Công Ty ABC` |
+| 7 | Slug Tenant | `cong-ty-abc` |
+| 8 | Email Admin | `admin@congty.com` |
+| 9 | Mật khẩu Admin | Tối thiểu 6 ký tự |
+| 10 | Mã License Key | Do HD Transport cấp |
 
-### Bước 3 — Ghi lại file `.env.local` (BẮT BUỘC)
+> Script tự động cài Docker, chạy schema + tất cả migrations (bao gồm multi-tenant), tạo Tenant + Admin, cấu hình HTTPS và khởi động hệ thống.
 
-> ⚠️ Sau khi `./setup.sh` chạy xong, bạn phải thực hiện bước này để tránh lỗi.
+### Bước 3 — Bật Custom Access Token Hook (BẮT BUỘC)
 
-Dán lệnh dưới vào VPS, **thay các giá trị `XXXX` bằng dữ liệu thực của bạn**:
+> ⚠️ **Bước này bắt buộc để multi-tenant hoạt động đúng.**
+
+1. Vào **Supabase Dashboard** → **Authentication** → **Hooks**
+2. Bật **Custom Access Token Hook**
+3. Chọn schema: `public`, function: `custom_access_token_hook`
+4. Nhấn **Save**
+
+### Bước 4 — Ghi lại file `.env.local` (nếu cần)
+
+> Thông thường, `setup.sh` đã tự tạo file này. Nếu cần ghi lại thủ công:
 
 ```bash
 cat > /var/www/hd-installer/transport-app/.env.local << 'EOF'
@@ -68,7 +85,7 @@ sudo docker ps
 sudo docker exec transport-app-app-1 env | grep -E "NEXT_PUBLIC|HD_LICENSE"
 ```
 
-Truy cập trang web qua tên miền đã cấu hình.
+Truy cập trang web qua tên miền đã cấu hình → Đăng nhập bằng Email Admin đã tạo.
 
 ---
 
@@ -93,48 +110,42 @@ Chạy lệnh này để bỏ qua và lấy bản mới:
 ```bash
 cd /var/www/hd-installer
 git reset --hard origin/main && git pull
-chmod +x setup.sh update.sh renew-license.sh
+chmod +x setup.sh update.sh
 sudo ./update.sh
 ```
 
 ---
 
-## 🔑 CẤP MÃ LICENSE CHO KHÁCH HÀNG
+## 🏢 PHẦN 3: QUẢN LÝ TENANT & USERS
 
-1. Mở file `HD_KeyGen_Trum_Cuoi.html` bằng trình duyệt
-2. Nhập tên miền + ngày hết hạn → Copy mã
-3. Khách hàng dán mã vào file `.env.local` tại dòng `HD_LICENSE_KEY=`
+### Dùng HD Admin Console (Super Admin)
 
----
+Mở file `Admin_tools/HD_Admin_Console.html` bằng trình duyệt. Công cụ này có 2 tab:
 
-## 🔄 CẬP NHẬT LICENSE KEY (KHÔNG CẦN CÀI LẠI)
+| Tab | Chức năng |
+|-----|-----------|
+| **Cấp Phép Bản Quyền** | Tạo License Key cho khách hàng |
+| **Quản Lý Tenant** | CRUD Tenant, xem/thêm User, Reset Password |
 
-Dùng khi license hết hạn hoặc cần đổi mã mới cho khách hàng.
+**Luồng onboarding khách mới:**
+1. Mở Admin Console → tab Quản Lý Tenant → **Thêm Tenant**
+2. Nhập Slug, Tên Công Ty, Gói, Email + Mật khẩu Admin đầu tiên
+3. Bật Custom Access Token Hook trên Supabase (nếu chưa bật)
+4. Cấp License Key → tab Cấp Phép Bản Quyền → nhập tên miền + ngày hết hạn
+5. Gửi thông tin đăng nhập + License Key cho khách
 
-### Bước 1 — Chạy script gia hạn
+### Dùng Settings trong App (Tenant Admin)
 
-```bash
-cd /var/www/hd-installer && sudo ./renew-license.sh
-```
+Tenant Admin đăng nhập app → **Settings** → có 2 tab:
 
-Script sẽ tự động:
-- Hiển thị license hiện tại (đã che bớt)
-- Yêu cầu nhập License Key mới
-- Cập nhật file `.env.local` (chỉ thay dòng `HD_LICENSE_KEY=`, giữ nguyên các biến khác)
-- Khởi động lại container để áp dụng ngay
-
-### Bước 2 — Kiểm tra sau khi gia hạn
-
-```bash
-# Xác nhận license mới đã được áp dụng
-sudo docker exec transport-app-app-1 env | grep HD_LICENSE
-```
-
-> ⚠️ Nếu lệnh trên báo lỗi tên container, kiểm tra tên thực bằng: `sudo docker ps`
+| Tab | Chức năng |
+|-----|-----------|
+| **🏢 Công ty** | Cấu hình thương hiệu, logo, thông tin công ty |
+| **👥 Người dùng** | Thêm/sửa user, phân quyền, reset mật khẩu |
 
 ---
 
-## 🧹 CÀI LẠI TỪ ĐẦU (KHI CẦN)
+## 🧹 PHẦN 4: CÀI LẠI TỪ ĐẦU (KHI CẦN)
 
 Dùng khi đổi Supabase, đổi tên miền, hoặc lỗi nặng:
 
@@ -148,38 +159,30 @@ sudo docker image rm ghcr.io/quang181198/transport-web:latest -f
 git reset --hard origin/main && git pull
 chmod +x setup.sh update.sh
 ./setup.sh
-# → Sau đó thực hiện lại Bước 3 (ghi .env.local)
+# → Sau đó thực hiện lại Bước 3 (bật Custom Access Token Hook)
 ```
 
 ---
 
-## 🛑 XEM LOG KHI CÓ SỰ CỐ
+## 🛑 PHẦN 5: XEM LOG KHI CÓ SỰ CỐ
 
 ```bash
 cd /var/www/hd-installer/transport-app
 sudo docker compose logs app --tail=50     # Log ứng dụng
-sudo docker compose logs caddy --tail=30  # Log HTTPS
+sudo docker compose logs caddy --tail=30   # Log HTTPS
 ```
-Transport-SaaS-Multi-Tenant
-nano
-https://yeduwmuejiwtflnkzkkq.supabase.co
 
-HD_Transporttravel
-nano
-https://spdjyopcjvskkbrlqiud.supabase.co
+---
 
+## 📋 TÓM TẮT CẤU TRÚC DATABASE (Multi-Tenant)
 
-Migrate database
+| Bảng | Vai trò |
+|------|---------|
+| `tenants` | Danh sách công ty (slug, name, plan, max_users) |
+| `user_profiles` | Users thuộc tenant (role, is_active, tenant_id) |
+| `bookings` | Đơn hàng (scoped by tenant_id) |
+| `assignments` | Phân công xe/lái xe (scoped by tenant_id) |
+| `vehicles` / `drivers` | Tài nguyên (scoped by tenant_id) |
+| `app_settings` | Cấu hình công ty (scoped by tenant_id) |
 
-npx supabase db dump --db-url "$OLD_DB_URL" -f schema.sql
-
-export OLD_DB_URL='postgresql://postgres.yeduwmuejiwtflnkzkkq:NMQuang%40181198@aws-1-ap-southeast-1.pooler.supabase.com:5432/postgres'
-export NEW_DB_URL='postgresql://postgres.spdjyopcjvskkbrlqiud:NMQuang%40181198@aws-1-ap-northeast-1.pooler.supabase.com:5432/postgres'       
-
-
-psql "$NEW_DB_URL" -c "select now();"
-npx supabase db dump --db-url "$OLD_DB_URL" -f schema.sql
-psql --single-transaction --variable ON_ERROR_STOP=1 --file schema.sql --dbname "$NEW_DB_URL"
-
-npx supabase db dump --db-url "$OLD_DB_URL" -f data.sql --use-copy --data-only -x "storage.buckets_vectors" -x "storage.vector_indexes"
-psql --single-transaction --variable ON_ERROR_STOP=1 --file data.sql --dbname "$NEW_DB_URL"
+> Tất cả bảng business đều có `tenant_id` NOT NULL + RLS policy tự động lọc theo JWT claim `tenant_id`.
